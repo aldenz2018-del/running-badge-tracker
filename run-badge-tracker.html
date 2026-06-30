@@ -82,7 +82,7 @@
     color: #ff6b6b;
   }
 
-  /* 🔥 Upgraded Badge Graphics */
+  /* Metallic badge graphics */
   .badge {
     width: 240px;
     height: 240px;
@@ -202,7 +202,7 @@
 <div class="app">
   <h1>🏅 Run Badge Maker (Cloud Co‑op)</h1>
 
-  <!-- Login -->
+  <!-- Profiles -->
   <div class="card">
     <label>Choose your profile</label>
     <div class="chips" id="profiles">
@@ -295,20 +295,12 @@
   </div>
 </div>
 
-<!-- Firebase -->
+<!-- Firebase CDN (compat) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
 <script>
-/* 🔥 PASTE YOUR FIREBASE CONFIG HERE */
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+/* Your Firebase config (no imports needed) */
 const firebaseConfig = {
   apiKey: "AIzaSyAWilmURnyX9_KBM1iNTiw5BGXR-lllsCY",
   authDomain: "runningbadgetracker.firebaseapp.com",
@@ -320,9 +312,6 @@ const firebaseConfig = {
   measurementId: "G-9F533KSCKH"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
@@ -340,7 +329,11 @@ function toggleChip(container, chip) {
 }
 
 document.getElementById("profiles").addEventListener("click", e => {
-  const chip = e.target.closest(".chip");
+  const chip = e.target.classList.contains("chip")
+    ? e.target
+    : e.target.parentElement && e.target.parentElement.classList.contains("chip")
+      ? e.target.parentElement
+      : null;
   if (!chip) return;
 
   document.querySelectorAll("#profiles .chip").forEach(c => c.classList.remove("active"));
@@ -356,7 +349,11 @@ document.getElementById("profiles").addEventListener("click", e => {
 
 ["conditions", "timeOfDay"].forEach(id => {
   document.getElementById(id).addEventListener("click", e => {
-    const chip = e.target.closest(".chip");
+    const chip = e.target.classList.contains("chip")
+      ? e.target
+      : e.target.parentElement && e.target.parentElement.classList.contains("chip")
+        ? e.target.parentElement
+        : null;
     if (!chip) return;
     toggleChip(document.getElementById(id), chip);
   });
@@ -419,10 +416,25 @@ function generateBadge() {
   const title = pickTitle(distance, effort, conditions, timeOfDay);
   const sub = buildSub(distance, effort, conditions, timeOfDay, note);
 
+  const badgeEl = document.getElementById("badgePreview");
+
+  // Dynamic colors by effort
+  if (effort === "easy") {
+    badgeEl.style.background = "radial-gradient(circle, #b0ffb0, #4caf50, #1b3d1b)";
+  } else if (effort === "steady") {
+    badgeEl.style.background = "radial-gradient(circle, #b0d8ff, #4a8cff, #1b2f5d)";
+  } else if (effort === "hard") {
+    badgeEl.style.background = "radial-gradient(circle, #ffd280, #ff8c00, #5d2f00)";
+  } else if (effort === "race") {
+    badgeEl.style.background = "radial-gradient(circle, #ffffff, #d4d4d4, #444444)";
+  } else {
+    badgeEl.style.background = "radial-gradient(circle at 30% 30%, #fff8, #ffb347 20%, #ff6b6b 60%, #2a2f55 100%)";
+  }
+
   document.getElementById("badgeEmoji").textContent = emoji;
   document.getElementById("badgeTitle").textContent = title;
   document.getElementById("badgeSub").textContent = sub;
-  document.getElementById("badgeDesc").textContent = description;
+  document.getElementById("badgeDesc").textContent = description || "";
 
   return { emoji, title, sub, description, distance, effort, conditions, timeOfDay, note };
 }
@@ -458,8 +470,8 @@ function loadBadges() {
           <div class="badge-item-title">${b.title}</div>
           <div class="badge-item-meta">${b.sub}</div>
           <div class="badge-item-meta">Run: ${b.description || "No description"}</div>
-          <div class="badge-item-meta">${b.date}</div>
-          <div class="badge-item-meta">Points: ${b.points}</div>
+          <div class="badge-item-meta">${b.date || ""}</div>
+          <div class="badge-item-meta">Points: ${b.points || 0}</div>
         </div>
       `;
       list.appendChild(item);
@@ -475,8 +487,8 @@ function loadLeaderboard() {
     const aldenBadges = aSnap.val() || {};
     const mattieBadges = mSnap.val() || {};
 
-    const aldenPts = Object.values(aldenBadges).reduce((t, b) => t + b.points, 0);
-    const mattiePts = Object.values(mattieBadges).reduce((t, b) => t + b.points, 0);
+    const aldenPts = Object.values(aldenBadges).reduce((t, b) => t + (b.points || 0), 0);
+    const mattiePts = Object.values(mattieBadges).reduce((t, b) => t + (b.points || 0), 0);
 
     document.getElementById("leaderboard").innerHTML = `
       <div>Alden: <strong>${aldenPts}</strong> pts</div>
@@ -494,4 +506,85 @@ function loadWeeklyChallenges() {
     const mattieBadges = Object.values(mSnap.val() || {});
 
     const totalBadges = aldenBadges.length + mattieBadges.length;
-    const
+    const totalMiles =
+      aldenBadges.reduce((t, b) => t + (b.distance || 0), 0) +
+      mattieBadges.reduce((t, b) => t + (b.distance || 0), 0);
+
+    document.getElementById("weeklyChallenges").innerHTML = `
+      <div>🏃 Earn 5 badges: <strong>${totalBadges}/5</strong></div>
+      <div>📏 Run 3 miles: <strong>${totalMiles.toFixed(2)}/3</strong></div>
+    `;
+  });
+}
+
+function loadAchievements() {
+  firebase.database().ref(`badges/${currentProfile}`).get().then(snap => {
+    const badges = Object.values(snap.val() || {});
+    const achievements = [];
+
+    if (badges.length >= 1)
+      achievements.push({ emoji: "🎉", title: "First Badge!" });
+
+    if (badges.length >= 10)
+      achievements.push({ emoji: "🏆", title: "10 Badge Collector" });
+
+    if (badges.some(b => b.effort === "race"))
+      achievements.push({ emoji: "🚀", title: "Race Effort Master" });
+
+    const list = document.getElementById("achievements");
+    list.innerHTML = "";
+
+    achievements.forEach(a => {
+      const item = document.createElement("div");
+      item.className = "achievement";
+      item.innerHTML = `
+        <div class="achievement-emoji">${a.emoji}</div>
+        <div class="achievement-title">${a.title}</div>
+      `;
+      list.appendChild(item);
+    });
+  });
+}
+
+function loadVersus() {
+  Promise.all([
+    firebase.database().ref("badges/alden").get(),
+    firebase.database().ref("badges/mattie").get()
+  ]).then(([aSnap, mSnap]) => {
+    const aldenBadges = Object.values(aSnap.val() || {});
+    const mattieBadges = Object.values(mSnap.val() || {});
+
+    const aldenPts = aldenBadges.reduce((t, b) => t + (b.points || 0), 0);
+    const mattiePts = mattieBadges.reduce((t, b) => t + (b.points || 0), 0);
+
+    let text = "";
+    if (aldenPts > mattiePts) text = "🔥 Alden is winning!";
+    else if (mattiePts > aldenPts) text = "🌟 Mattie is winning!";
+    else text = "🤝 It's a tie!";
+
+    document.getElementById("versusScore").textContent = text;
+  });
+}
+
+/* ------------------ EVENTS ------------------ */
+
+document.getElementById("generateBtn").addEventListener("click", () => {
+  generateBadge();
+});
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  const badge = generateBadge();
+  badge.date = new Date().toLocaleString();
+  badge.points = calculatePoints(badge);
+  saveBadgeToCloud(badge);
+});
+
+/* Initial load */
+loadBadges();
+loadLeaderboard();
+loadAchievements();
+loadWeeklyChallenges();
+loadVersus();
+</script>
+</body>
+</html>
