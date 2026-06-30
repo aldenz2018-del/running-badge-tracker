@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Run Badge Maker (Cloud Co‑op)</title>
+<style>
+  body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background: #0b1020;
+    color: #fff;
+    padding: 20px;
+  }
+  .app {
+    max-width: 900px;
+    margin: auto;
+  }
+  h1 {
+    font-size: 1.8rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card {
+    background: #151a2f;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+  }
+  label {
+    font-size: 0.8rem;
+    opacity: 0.7;
+  }
+  input, select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 4px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    border: none;
+    background: #101528;
+    color: #fff;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .chip {
+    padding: 6px 10px;
+    background: #101528;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    opacity: 0.8;
+  }
+  .chip.active {
+    background: #6cf0c2;
+    color: #041019;
+    opacity: 1;
+  }
+  button {
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    margin-right: 8px;
+  }
+  .primary {
+    background: #ffb347;
+    color: #000;
+    font-weight: 600;
+  }
+  .secondary {
+    background: #101528;
+    color: #ccc;
+  }
+  .danger {
+    background: #1f1014;
+    color: #ff6b6b;
+  }
+
+  /* 🔥 Upgraded Badge Graphics */
+  .badge {
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: auto;
+    margin-bottom: 12px;
+    background: radial-gradient(circle at 30% 30%, #fff8, #ffb347 20%, #ff6b6b 60%, #2a2f55 100%);
+    box-shadow:
+      0 0 25px rgba(255, 180, 70, 0.6),
+      0 0 60px rgba(255, 107, 107, 0.4);
+    animation: pop 0.4s ease-out;
+  }
+  @keyframes pop {
+    0% { transform: scale(0.6); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .badge::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at top, rgba(255,255,255,0.45), transparent 60%);
+    pointer-events: none;
+  }
+  .badge::after {
+    content: "";
+    position: absolute;
+    width: 85%;
+    height: 85%;
+    border-radius: 50%;
+    border: 4px solid rgba(255,255,255,0.25);
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.4);
+    pointer-events: none;
+  }
+  .badge-emoji {
+    font-size: 3.4rem;
+    z-index: 2;
+  }
+  .badge-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-top: 6px;
+    z-index: 2;
+    text-shadow:
+      0 2px 4px rgba(0,0,0,0.5),
+      0 -1px 0 rgba(255,255,255,0.4);
+  }
+  .badge-sub, .badge-desc {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    margin-top: 4px;
+    text-align: center;
+    padding: 0 10px;
+    z-index: 2;
+  }
+
+  .badge-list {
+    margin-top: 12px;
+  }
+  .badge-item {
+    background: #101528;
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .badge-item-emoji {
+    font-size: 1.4rem;
+  }
+  .badge-item-title {
+    font-weight: 600;
+  }
+  .badge-item-meta {
+    font-size: 0.8rem;
+    opacity: 0.7;
+  }
+
+  .achievement {
+    background: #0f1a33;
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .achievement-emoji {
+    font-size: 1.4rem;
+  }
+  .achievement-title {
+    font-weight: 600;
+  }
+
+  .versus-box {
+    background: #101528;
+    padding: 14px;
+    border-radius: 12px;
+    text-align: center;
+    margin-top: 12px;
+  }
+  .versus-score {
+    font-size: 1.2rem;
+    margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>🏅 Run Badge Maker (Cloud Co‑op)</h1>
+
+  <!-- Login -->
+  <div class="card">
+    <label>Choose your profile</label>
+    <div class="chips" id="profiles">
+      <div class="chip active" data-profile="alden">Alden</div>
+      <div class="chip" data-profile="mattie">Mattie</div>
+    </div>
+  </div>
+
+  <!-- Badge Form -->
+  <div class="card">
+    <label>Distance (miles)</label>
+    <input id="distance" type="number" step="0.01" />
+
+    <label>Effort</label>
+    <select id="effort">
+      <option value="easy">Easy</option>
+      <option value="steady">Steady</option>
+      <option value="hard">Hard</option>
+      <option value="race">Race effort</option>
+    </select>
+
+    <label>Conditions</label>
+    <div class="chips" id="conditions">
+      <div class="chip" data-value="sun">☀️ Sunny</div>
+      <div class="chip" data-value="wind">💨 Windy</div>
+      <div class="chip" data-value="rain">🌧️ Rainy</div>
+      <div class="chip" data-value="cold">🥶 Cold</div>
+      <div class="chip" data-value="heat">🥵 Hot</div>
+    </div>
+
+    <label>Time of day</label>
+    <div class="chips" id="timeOfDay">
+      <div class="chip" data-value="morning">🌅 Morning</div>
+      <div class="chip" data-value="afternoon">🌤️ Afternoon</div>
+      <div class="chip" data-value="evening">🌇 Evening</div>
+      <div class="chip" data-value="night">🌙 Night</div>
+    </div>
+
+    <label>Short Note</label>
+    <input id="note" type="text" maxlength="80" placeholder="Quick note…" />
+
+    <label>Run Description</label>
+    <input id="description" type="text" maxlength="120" placeholder="Describe the run…" />
+
+    <button class="primary" id="generateBtn">✨ Generate badge</button>
+    <button class="secondary" id="saveBtn">💾 Save badge</button>
+  </div>
+
+  <!-- Preview -->
+  <div class="card">
+    <div class="badge" id="badgePreview">
+      <div class="badge-emoji" id="badgeEmoji">🏃‍♀️</div>
+      <div class="badge-title" id="badgeTitle">Run Hero</div>
+      <div class="badge-sub" id="badgeSub">Tap "Generate badge"</div>
+      <div class="badge-desc" id="badgeDesc"></div>
+    </div>
+  </div>
+
+  <!-- Saved Badges -->
+  <div class="card">
+    <h3>Saved Badges</h3>
+    <div class="badge-list" id="badgeList"></div>
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="card">
+    <h3>Leaderboard</h3>
+    <div id="leaderboard"></div>
+  </div>
+
+  <!-- Weekly Challenges -->
+  <div class="card">
+    <h3>Weekly Challenges</h3>
+    <div id="weeklyChallenges"></div>
+  </div>
+
+  <!-- Achievements -->
+  <div class="card">
+    <h3>Trophy Case</h3>
+    <div id="achievements"></div>
+  </div>
+
+  <!-- Versus Mode -->
+  <div class="card">
+    <h3>Versus Mode</h3>
+    <div class="versus-box">
+      <div>Who is winning?</div>
+      <div class="versus-score" id="versusScore"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+<script>
+/* 🔥 PASTE YOUR FIREBASE CONFIG HERE */
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAWilmURnyX9_KBM1iNTiw5BGXR-lllsCY",
+  authDomain: "runningbadgetracker.firebaseapp.com",
+  databaseURL: "https://runningbadgetracker-default-rtdb.firebaseio.com",
+  projectId: "runningbadgetracker",
+  storageBucket: "runningbadgetracker.firebasestorage.app",
+  messagingSenderId: "905660015326",
+  appId: "1:905660015326:web:421d0f23c4360fc656d84f",
+  measurementId: "G-9F533KSCKH"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* ------------------ APP LOGIC ------------------ */
+
+let currentProfile = "alden";
+
+function toggleChip(container, chip) {
+  if (container.id === "timeOfDay") {
+    container.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+  } else {
+    chip.classList.toggle("active");
+  }
+}
+
+document.getElementById("profiles").addEventListener("click", e => {
+  const chip = e.target.closest(".chip");
+  if (!chip) return;
+
+  document.querySelectorAll("#profiles .chip").forEach(c => c.classList.remove("active"));
+  chip.classList.add("active");
+
+  currentProfile = chip.getAttribute("data-profile");
+  loadBadges();
+  loadLeaderboard();
+  loadAchievements();
+  loadWeeklyChallenges();
+  loadVersus();
+});
+
+["conditions", "timeOfDay"].forEach(id => {
+  document.getElementById(id).addEventListener("click", e => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
+    toggleChip(document.getElementById(id), chip);
+  });
+});
+
+function getActiveValues(id) {
+  return [...document.querySelectorAll(`#${id} .chip.active`)]
+    .map(c => c.getAttribute("data-value"));
+}
+
+function pickEmoji(distance, effort, conditions, timeOfDay) {
+  if (effort === "race") return "🏁";
+  if (conditions.includes("rain")) return "🌧️";
+  if (conditions.includes("wind")) return "💨";
+  if (conditions.includes("heat")) return "🔥";
+  if (conditions.includes("cold")) return "❄️";
+  if (distance >= 3) return "🐆";
+  if (distance >= 1) return "🏃‍♀️";
+  if (timeOfDay === "night") return "🌙";
+  if (timeOfDay === "morning") return "🌅";
+  return "⭐";
+}
+
+function pickTitle(distance, effort, conditions, timeOfDay) {
+  if (effort === "race") return "Race Day Rocket";
+  if (conditions.includes("rain")) return "Rain Runner";
+  if (conditions.includes("wind")) return "Wind Warrior";
+  if (conditions.includes("heat")) return "Heat Hero";
+  if (conditions.includes("cold")) return "Frosty Flyer";
+  if (distance >= 3) return "Distance Dynamo";
+  if (distance >= 1.5) return "Steady Strider";
+  if (distance >= 1) return "One Mile Marvel";
+  if (distance >= 0.5) return "Half Mile Hero";
+  if (timeOfDay === "morning") return "Sunrise Strider";
+  if (timeOfDay === "evening") return "Sunset Sprinter";
+  if (timeOfDay === "night") return "Night Ninja";
+  return "Run Hero";
+}
+
+function buildSub(distance, effort, conditions, timeOfDay, note) {
+  const parts = [];
+  if (distance > 0) parts.push(`${distance.toFixed(2)} miles`);
+  parts.push(effort);
+  if (conditions.length) parts.push(conditions.join(", "));
+  if (timeOfDay) parts.push(timeOfDay);
+  let base = parts.join(" • ");
+  if (note) base += ` — ${note}`;
+  return base;
+}
+
+function generateBadge() {
+  const distance = parseFloat(document.getElementById("distance").value || "0");
+  const effort = document.getElementById("effort").value;
+  const conditions = getActiveValues("conditions");
+  const timeOfDay = getActiveValues("timeOfDay")[0] || "";
+  const note = document.getElementById("note").value;
+  const description = document.getElementById("description").value;
+
+  const emoji = pickEmoji(distance, effort, conditions, timeOfDay);
+  const title = pickTitle(distance, effort, conditions, timeOfDay);
+  const sub = buildSub(distance, effort, conditions, timeOfDay, note);
+
+  document.getElementById("badgeEmoji").textContent = emoji;
+  document.getElementById("badgeTitle").textContent = title;
+  document.getElementById("badgeSub").textContent = sub;
+  document.getElementById("badgeDesc").textContent = description;
+
+  return { emoji, title, sub, description, distance, effort, conditions, timeOfDay, note };
+}
+
+function calculatePoints(b) {
+  let pts = 0;
+  const effortPts = { easy: 5, steady: 10, hard: 15, race: 25 };
+  pts += effortPts[b.effort] || 5;
+  pts += b.conditions.length * 2;
+  pts += Math.floor(b.distance * 10);
+  return pts;
+}
+
+/* ------------------ CLOUD SYNC ------------------ */
+
+function saveBadgeToCloud(badge) {
+  firebase.database().ref(`badges/${currentProfile}`).push(badge);
+}
+
+function loadBadges() {
+  firebase.database().ref(`badges/${currentProfile}`).on("value", snapshot => {
+    const list = document.getElementById("badgeList");
+    list.innerHTML = "";
+
+    const badges = snapshot.val() || {};
+    Object.values(badges).reverse().forEach(b => {
+      const item = document.createElement("div");
+      item.className = "badge-item";
+
+      item.innerHTML = `
+        <div class="badge-item-emoji">${b.emoji}</div>
+        <div>
+          <div class="badge-item-title">${b.title}</div>
+          <div class="badge-item-meta">${b.sub}</div>
+          <div class="badge-item-meta">Run: ${b.description || "No description"}</div>
+          <div class="badge-item-meta">${b.date}</div>
+          <div class="badge-item-meta">Points: ${b.points}</div>
+        </div>
+      `;
+      list.appendChild(item);
+    });
+  });
+}
+
+function loadLeaderboard() {
+  Promise.all([
+    firebase.database().ref("badges/alden").get(),
+    firebase.database().ref("badges/mattie").get()
+  ]).then(([aSnap, mSnap]) => {
+    const aldenBadges = aSnap.val() || {};
+    const mattieBadges = mSnap.val() || {};
+
+    const aldenPts = Object.values(aldenBadges).reduce((t, b) => t + b.points, 0);
+    const mattiePts = Object.values(mattieBadges).reduce((t, b) => t + b.points, 0);
+
+    document.getElementById("leaderboard").innerHTML = `
+      <div>Alden: <strong>${aldenPts}</strong> pts</div>
+      <div>Mattie: <strong>${mattiePts}</strong> pts</div>
+    `;
+  });
+}
+
+function loadWeeklyChallenges() {
+  Promise.all([
+    firebase.database().ref("badges/alden").get(),
+    firebase.database().ref("badges/mattie").get()
+  ]).then(([aSnap, mSnap]) => {
+    const aldenBadges = Object.values(aSnap.val() || {});
+    const mattieBadges = Object.values(mSnap.val() || {});
+
+    const totalBadges = aldenBadges.length + mattieBadges.length;
+    const
